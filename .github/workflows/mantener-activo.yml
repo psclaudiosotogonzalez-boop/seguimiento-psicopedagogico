@@ -1,0 +1,45 @@
+# Mantiene activo el proyecto de Supabase de la app.
+#
+# En el plan gratuito, Supabase pausa el proyecto tras 7 días sin uso (por ejemplo, en vacaciones). Los datos
+# no se pierden, pero la app no carga hasta reactivarlo a mano. Esta tarea hace una consulta cada 3 días.
+# Usa la clave pública (la misma que ya trae la versión web): por las reglas de la base de datos no lee ningún
+# dato, solo cuenta como actividad.
+#
+# GitHub apaga las tareas programadas de un repositorio público sin cambios en 60 días, así que una vez al mes
+# también actualiza el archivo .github/ultima-visita.txt.
+name: Mantener activo Supabase
+
+on:
+  schedule:
+    - cron: "17 12 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  visita:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta a la base de datos
+        env:
+          URL: https://pgzkmhthmswbpactjvcw.supabase.co
+          CLAVE_PUBLICA: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $CLAVE_PUBLICA" -H "Authorization: Bearer $CLAVE_PUBLICA" "$URL/rest/v1/app_state?select=user_id&limit=1")
+          echo "Respuesta de Supabase: $codigo"
+          test "$codigo" = "200"
+
+      - name: Traer el repositorio (para el registro mensual)
+        uses: actions/checkout@v4
+      - name: Actualizar fecha de la última visita (solo los días 1 a 3 de cada mes)
+        run: |
+          dia=$(date -u +%d)
+          if [ "$dia" -le 3 ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            date -u +"%Y-%m-%d %H:%M UTC" > .github/ultima-visita.txt
+            git config user.name "mantener-activo"
+            git config user.email "actions@users.noreply.github.com"
+            git add .github/ultima-visita.txt
+            git commit -m "Última visita a Supabase" || echo "sin cambios"
+            git push
+          fi
