@@ -1,4 +1,4 @@
-import{J as fe}from"./jszip.min-iJWm_p_b.js";import"./index-B8zEixWf.js";/*
+import{J as fe}from"./jszip.min-B9YSOEcV.js";import"./index-DmDWVdM7.js";/*
  * @license
  * docx-preview <https://github.com/VolodymyrBaydalka/docxjs>
  * Released under Apache License 2.0  <https://github.com/VolodymyrBaydalka/docxjs/blob/master/LICENSE>
